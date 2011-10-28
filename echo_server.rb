@@ -7,7 +7,14 @@ class EchoServer
   end
 
   def call(env)
-    log(env)
+    begin
+      log(env)
+    rescue Exception => e
+      File.open('log/server.log', 'a') do |f|
+        f.write("[#{Time.now}] #{e.class}: #{e.message}\n")
+        e.backtrace.each {|line| f.write("  #{line}\n") }
+      end
+    end
     [200, {"Content-Type" => "text/plain"}, env.inspect]
   end
 
@@ -24,7 +31,7 @@ private
       if hash[key].is_a?(Hash)
         log(hash[key], (level + 1), file)
       else
-        if key == "rack.input"
+        if key == 'rack.input'
           value = hash[key].read
         else
           value = hash[key]
